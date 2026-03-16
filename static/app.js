@@ -329,6 +329,110 @@ function parseCSV(text) {
     return result;
 }
 
+function showFactImportModal() {
+    const fileInput = qs('#fact-import-modal input[type="file"]');
+    if (fileInput) fileInput.value = '';
+    openModal('fact-import-modal');
+}
+
+function closeFactImportModal() {
+    closeModal('fact-import-modal');
+}
+
+function downloadFactImportTemplate() {
+    const headers = ['标题*', '事实内容*', '关联实体ID(分号分隔)', '关联事件ID(分号分隔)', '事实分类', '来源类型', '来源描述', '来源原文片段', '来源URL', '时间描述', '开始时间', '结束时间'];
+    const csvContent = '\uFEFF' + headers.join(',') + '\n' + 
+        '测试标题,测试的事实内容文本,1001;1002,10150,英雄相关,官方公告,测试公告,这是测试公告的原文...,https://example.com,长驻,2026/01/01 00:00:00,2026/12/31 23:59:59';
+        
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '事实批量导入模板.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function processFactImport() {
+    const fileInput = qs('#fact-import-file');
+    if (!fileInput || !fileInput.files.length) {
+        alert('请选择要上传的CSV文件');
+        return;
+    }
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result;
+        const rows = parseCSV(text);
+        if (rows.length < 2) {
+            alert('文件为空或格式错误');
+            return;
+        }
+        
+        let importedCount = 0;
+        let lastId = factState.data.length ? Math.max(...factState.data.map(f => parseInt(f.id, 10) || 0)) : 50000;
+        if (lastId < 50000) lastId = 50000;
+
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || row.length < 2) continue; // skip empty rows
+            
+            const title = (row[0] || '').trim();
+            const factText = (row[1] || '').trim();
+            const entityIdsStr = (row[2] || '').trim();
+            const eventIdsStr = (row[3] || '').trim();
+            const categoryName = (row[4] || '').trim();
+            const sourceType = (row[5] || '').trim();
+            const source = (row[6] || '').trim();
+            const sourceContent = (row[7] || '').trim();
+            const sourceUrl = (row[8] || '').trim();
+            const timeDesc = (row[9] || '').trim();
+            const startTime = (row[10] || '').trim();
+            const endTime = (row[11] || '').trim();
+
+            if (!title || !factText) continue; // must have title and factText
+            
+            lastId++;
+            const newFact = {
+                id: lastId,
+                title: title,
+                factText: factText,
+                entityIds: entityIdsStr ? entityIdsStr.split(';').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id)) : [],
+                eventIds: eventIdsStr ? eventIdsStr.split(';').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id)) : [],
+                categoryId: categoryName ? (factState.categories.find(c => c.name === categoryName)?.id || null) : null,
+                sourceType: sourceType,
+                source: source,
+                sourceContent: sourceContent,
+                sourceUrl: sourceUrl,
+                timeDescription: timeDesc,
+                startTime: startTime,
+                endTime: endTime,
+                reviewStatus: 'pending',
+                uploadStatus: 'pending',
+                lang: factState.currentLang,
+                createdAt: nowDateTime()
+            };
+
+            ensureAuditFieldsForRecord(newFact);
+            factState.data.push(newFact);
+            importedCount++;
+        }
+
+        if (importedCount > 0) {
+            appendOperationLog('facts', '批量导入事实', `Batch`, `${importedCount}项`, `成功导入${importedCount}条事实记录`);
+            renderFactStats();
+            searchFacts();
+            alert(`成功导入 ${importedCount} 条事实记录！`);
+            closeFactImportModal();
+        } else {
+            alert('未找到有效的数据行（可能缺少必填字段: 标题和内容）');
+        }
+    };
+    reader.readAsText(file);
+}
+
 function processEntityImport() {
     const fileInput = qs('#entity-import-file');
     if (!fileInput || !fileInput.files.length) {
