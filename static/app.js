@@ -1958,6 +1958,9 @@ window.extractFacts = function() {
         return;
     }
     
+    const modeObj = document.querySelector('input[name="extract-mode"]:checked');
+    const mode = modeObj ? modeObj.value : 'single';
+
     document.getElementById('fact-extraction-loading').style.display = 'block';
     document.getElementById('fact-extraction-results').style.display = 'none';
     
@@ -1967,7 +1970,7 @@ window.extractFacts = function() {
         
         // 模拟更接近原始设计稿的提取结果卡片
         const listContainer = document.getElementById('fact-extraction-facts-list');
-        listContainer.innerHTML = `
+        const singleCardHtml = `
             <div class="fact-card-wrapper" style="border: 1px solid #E5E6EB; border-radius: 8px; margin-bottom: 16px; background: white; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                 <div style="padding: 16px; border-bottom: 1px solid #E5E6EB; display: flex; justify-content: space-between; align-items: flex-start; background: #FAFAFB;">
                     <div style="flex: 1;">
@@ -2042,6 +2045,14 @@ window.extractFacts = function() {
                 </div>
             </div>
         `;
+
+        if (mode === 'multiple') {
+            listContainer.innerHTML = [1, 2, 3].map(i => 
+                singleCardHtml.replace('全国大赛预赛于3月10日9点开始。', `提取的分散事实 ${i}：这是从长句中拆分出来的第 ${i} 个核心知识点。`)
+            ).join('');
+        } else {
+            listContainer.innerHTML = singleCardHtml;
+        }
     }, 1500);
 };
 
