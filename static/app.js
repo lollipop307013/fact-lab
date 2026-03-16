@@ -13,7 +13,7 @@ const mockEntities = [
     { id: 1012, parentId: 1011, name: '预赛', tags: ['赛事'], aliases: ['资格赛'], reviewStatus: 'approved', description: '全国大赛预赛', timeDescription: '赛前一周', startTime: '2026/03/10 10:00:00', endTime: '2026/03/15 23:59:59', lang: 'zh' },
     { id: 1013, parentId: 1011, name: '复活赛', tags: ['赛事'], aliases: ['败者组'], reviewStatus: 'pending', description: '复活机会赛程', timeDescription: '预赛后次日', startTime: '2026/03/16 10:00:00', endTime: '2026/03/16 23:59:59', lang: 'zh' },
     { id: 1014, parentId: 1010, name: '挑战赛', tags: ['赛事'], aliases: ['挑战杯'], reviewStatus: 'approved', description: '挑战类赛事', timeDescription: '每周末', startTime: '2026/03/01 00:00:00', endTime: '', lang: 'zh' },
-    { id: 1015, parentId: 1010, name: '邀请赛', tags: ['赛事'], aliases: ['邀请赛'], reviewStatus: 'rejected', description: '定向邀请赛事', timeDescription: '不定期', startTime: '', endTime: '', lang: 'zh' },
+    { id: 1015, parentId: 1010, name: '邀请赛', tags: ['赛事'], aliases: ['邀请赛'], reviewStatus: 'pending', description: '定向邀请赛事', timeDescription: '不定期', startTime: '', endTime: '', lang: 'zh' },
     { id: 1020, parentId: null, name: '机制', tags: ['分类'], aliases: ['规则机制'], reviewStatus: 'approved', description: '玩法机制分类', timeDescription: '', startTime: '', endTime: '', lang: 'zh' },
     { id: 1021, parentId: 1020, name: '经济', tags: ['系统'], aliases: ['资源系统'], reviewStatus: 'approved', description: '经济系统与资源循环', timeDescription: '版本内保持一致', startTime: '', endTime: '', lang: 'zh' },
     { id: 1022, parentId: 1020, name: '移速', tags: ['数值'], aliases: ['移动速度'], reviewStatus: 'pending', description: '角色移动速度规则', timeDescription: '受地图模式影响', startTime: '', endTime: '', lang: 'zh' },
@@ -26,7 +26,7 @@ const mockEvents = [
     { id: 10127, name: '海底总动员', aliases: ['海底赛季'], eventTags: ['活动'], reviewStatus: 'pending', startTime: '2026/03/11 00:00:00', endTime: '2026/03/20 23:59:59', timeDescription: '活动期间限时开启', source: '运营配置', lang: 'zh' },
     { id: 10150, name: '第三季', aliases: ['S3'], eventTags: ['版本'], reviewStatus: 'approved', startTime: '2026/03/01 00:00:00', endTime: '2026/06/30 23:59:59', timeDescription: '季度版本', source: '版本公告', lang: 'zh' },
     { id: 10149, name: '冬季赛事', aliases: ['冬冠'], eventTags: ['赛事'], reviewStatus: 'approved', startTime: '2026/12/01 00:00:00', endTime: '2026/12/31 23:59:59', timeDescription: '冬季月赛', source: '赛事中心', lang: 'zh' },
-    { id: 10006, name: '无畏考场', aliases: ['考场'], eventTags: ['比赛'], reviewStatus: 'rejected', startTime: '2026/02/10 00:00:00', endTime: '2026/02/15 23:59:59', timeDescription: '周内赛程', source: '测试配置', lang: 'zh' }
+    { id: 10006, name: '无畏考场', aliases: ['考场'], eventTags: ['比赛'], reviewStatus: 'pending', startTime: '2026/02/10 00:00:00', endTime: '2026/02/15 23:59:59', timeDescription: '周内赛程', source: '测试配置', lang: 'zh' }
 ];
 
 const mockFactCategories = [
@@ -41,7 +41,7 @@ const mockFacts = [
     { id: 50001, title: '全国大赛预赛时间', factText: '全国大赛预赛于3月10日10点开始。', reviewStatus: 'approved', uploadStatus: 'done', entityIds: [1011, 1012], eventIds: [10599], sourceType: '赛事-赛程公告', source: '赛事中心 / 官方公告（211166027680000）', sourceUrl: 'https://example.com/a', sourceContent: '问题：全国大赛预赛首轮时间？【预赛赛程表】答案：3月10日10:00开赛，3月15日23:59结束。', startTime: '2026/03/10 10:00:00', endTime: '2026/03/15 23:59:59', timeDescription: '预赛周期（工作日+周末）', lang: 'zh', contradictionReason: '', contradictingFactIds: [], duplicateFactIds: [], categoryId: 2 },
     { id: 50002, title: '复活赛时间', factText: '复活赛在预赛次日进行。', reviewStatus: 'pending', uploadStatus: 'pending', entityIds: [1013], eventIds: [10599], sourceType: 'AI抽取-运营周报', source: '内部提取 / 周报（211166052600000）', sourceUrl: '', sourceContent: '问题：复活赛安排在何时？答案：预赛结束后次日10:00-23:59。证据：运营周报第12期。', startTime: '2026/03/16 10:00:00', endTime: '2026/03/16 23:59:59', timeDescription: '预赛后次日（单日）', lang: 'zh', contradictionReason: '', contradictingFactIds: [], duplicateFactIds: [], categoryId: 2 },
     { id: 50003, title: '挑战赛开放时间', factText: '挑战赛每周末开放。', reviewStatus: 'approved', uploadStatus: 'need_update', entityIds: [1014], eventIds: [10149], sourceType: '商业化-赛事皮肤', source: '活动中心 / 玩法入口（211166086040000）', sourceUrl: '', sourceContent: '问题：挑战赛开放规则？答案：每周六00:00至周日23:59开放。备注：节假日可能延长。', startTime: '2026/03/01 00:00:00', endTime: '2026/12/31 23:59:59', timeDescription: '每周末循环开放', lang: 'zh', contradictionReason: '', contradictingFactIds: [], duplicateFactIds: [], categoryId: 5 },
-    { id: 50004, title: '邀请赛状态', factText: '邀请赛为不定期赛事。', reviewStatus: 'rejected', uploadStatus: 'done', entityIds: [1015], eventIds: [10149], sourceType: '赛事-运营通知', source: '运营通知 / 群公告（211166106820000）', sourceUrl: '', sourceContent: '问题：邀请赛是否固定日期？答案：非固定，按运营计划临时发布。', startTime: '2026/01/01 00:00:00', endTime: '2026/12/31 23:59:59', timeDescription: '不定期（按公告）', lang: 'zh', contradictionReason: '与旧运营文档“每月20日固定举行”冲突', contradictingFactIds: [50006], duplicateFactIds: [], categoryId: 3 },
+    { id: 50004, title: '邀请赛状态', factText: '邀请赛为不定期赛事。', reviewStatus: 'pending', uploadStatus: 'done', entityIds: [1015], eventIds: [10149], sourceType: '赛事-运营通知', source: '运营通知 / 群公告（211166106820000）', sourceUrl: '', sourceContent: '问题：邀请赛是否固定日期？答案：非固定，按运营计划临时发布。', startTime: '2026/01/01 00:00:00', endTime: '2026/12/31 23:59:59', timeDescription: '不定期（按公告）', lang: 'zh', contradictionReason: '与旧运营文档“每月20日固定举行”冲突', contradictingFactIds: [50006], duplicateFactIds: [], categoryId: 3 },
     { id: 50005, title: '第三季版本周期', factText: '第三季版本从3月持续到6月。', reviewStatus: 'approved', uploadStatus: 'done', entityIds: [1002, 1003], eventIds: [10150], sourceType: '版本-官方公告', source: '版本公告（211166120700000）', sourceUrl: 'https://example.com/season3', sourceContent: '问题：S3版本周期？答案：2026/03/01 00:00:00 - 2026/06/30 23:59:59。', startTime: '2026/03/01 00:00:00', endTime: '2026/06/30 23:59:59', timeDescription: '季度版本', lang: 'zh', contradictionReason: '', contradictingFactIds: [], duplicateFactIds: [50007], categoryId: 4 },
     { id: 50006, title: '邀请赛固定时间', factText: '邀请赛固定在每月20日举行。', reviewStatus: 'pending', uploadStatus: 'pending', entityIds: [1015], eventIds: [10149], sourceType: '历史资料-文档抽取', source: '历史文档 / 存档页（211166132440000）', sourceUrl: '', sourceContent: '问题：邀请赛固定日期？答案：每月20日。可信度：中。', startTime: '2026/01/20 00:00:00', endTime: '2026/12/20 23:59:59', timeDescription: '每月20日（待核验）', lang: 'zh', contradictionReason: '与不定期说法冲突', contradictingFactIds: [50004], duplicateFactIds: [], categoryId: 3 },
     { id: 50007, title: '第三季英文描述', factText: 'Season 3 runs from March to June.', reviewStatus: 'approved', uploadStatus: 'done', entityIds: [1002], eventIds: [10150], sourceType: 'Human_Verified', source: 'English Notes', sourceUrl: '', sourceContent: 'translated memo', startTime: '2026/03/01 00:00:00', endTime: '2026/06/30 23:59:59', timeDescription: 'Season cycle', lang: 'en', contradictionReason: '', contradictingFactIds: [], duplicateFactIds: [50005], categoryId: 4 }
@@ -634,7 +634,6 @@ function renderEntityRow(e) {
     const tagsHtml = (e.tags || []).map((t) => `<span style="display:inline-block;background:#e8ecff;color:#3f51b5;padding:3px 8px;border-radius:12px;margin-right:4px;font-size:12px;">${t}</span>`).join('');
     const reviewMap = {
         approved: { text: '已审核', color: '#2ecc71' },
-        rejected: { text: '已拒绝', color: '#e74c3c' },
         pending: { text: '待审核', color: '#f1c40f' }
     };
     const review = reviewMap[e.reviewStatus] || reviewMap.pending;
@@ -752,7 +751,6 @@ function renderEventsTable() {
 function renderEventRow(e) {
     const reviewMap = {
         approved: { text: '已审核', color: '#2ecc71' },
-        rejected: { text: '已拒绝', color: '#e74c3c' },
         pending: { text: '待审核', color: '#f1c40f' }
     };
     const review = reviewMap[e.reviewStatus] || reviewMap.pending;
@@ -1160,7 +1158,6 @@ function getFactStatusBadge(status, type) {
         }
         : {
             approved: { text: '已审核', color: '#2ecc71' },
-            rejected: { text: '已拒绝', color: '#e74c3c' },
             pending: { text: '待审核', color: '#f1c40f' }
         };
     const item = map[status] || map.pending;
@@ -1214,11 +1211,9 @@ function renderFactStats() {
     const count = (status) => factState.data.filter((f) => f.reviewStatus === status).length;
     const approved = qs('#fact-stats-approved');
     const pending = qs('#fact-stats-pending');
-    const rejected = qs('#fact-stats-rejected');
     const total = qs('#fact-stats-total');
     if (approved) approved.textContent = count('approved');
     if (pending) pending.textContent = count('pending');
-    if (rejected) rejected.textContent = count('rejected');
     if (total) total.textContent = factState.data.length;
 }
 
@@ -1384,7 +1379,9 @@ function handleFactSubmit(e) {
 function batchUpdateFactReviewStatus() {
     if (!factState.selected.size) return;
     const status = qs('#fact-batch-review-status')?.value || 'pending';
+    
     factState.data = factState.data.map((f) => factState.selected.has(f.id) ? { ...f, reviewStatus: status } : f);
+    
     renderFactStats();
     searchFacts();
 }
