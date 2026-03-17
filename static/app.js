@@ -248,6 +248,29 @@ function closeModal(modalId) {
     if (!qs('.modal[data-open="1"]')) document.body.style.overflow = '';
 }
 
+function renderEntityParentOptions(editingId) {
+    const select = qs('#entity-parent-id');
+    if (!select) return;
+    
+    // 找出所有可以作为父级的实体，优先展示带"分类"标签的
+    const cats = entityState.data.filter(e => e.id !== editingId && (e.tags || []).includes('分类'));
+    const others = entityState.data.filter(e => e.id !== editingId && !(e.tags || []).includes('分类'));
+    
+    let html = '<option value="">无（作为根分类）</option>';
+    if (cats.length) {
+        html += '<optgroup label="预设分类属性实体">';
+        html += cats.map(e => `<option value="${e.id}">${e.name} (${e.id})</option>`).join('');
+        html += '</optgroup>';
+    }
+    if (others.length) {
+        html += '<optgroup label="其他实体">';
+        html += others.map(e => `<option value="${e.id}">${e.name} (${e.id})</option>`).join('');
+        html += '</optgroup>';
+    }
+    
+    select.innerHTML = html;
+}
+
 function showEntityModal(entityId) {
     const title = qs('#entity-modal-title');
     if (title) title.textContent = entityId ? '编辑实体' : '新建实体';
@@ -255,6 +278,8 @@ function showEntityModal(entityId) {
     const form = qs('#entity-form');
     if (!form) return;
     form.dataset.editingId = entityId || '';
+
+    renderEntityParentOptions(entityId);
 
     if (entityId) {
         const entity = entityState.data.find((e) => e.id === entityId);
@@ -550,6 +575,7 @@ function closeFactModal() { closeModal('fact-modal'); }
 function fillEntityForm(entity) {
     qs('#entity-id').value = entity.id;
     qs('#entity-name').value = entity.name || '';
+    qs('#entity-parent-id').value = entity.parentId || '';
     qs('#entity-aliases').value = (entity.aliases || []).join('\n');
     qs('#entity-description').value = entity.description || '';
     qs('#entity-time-description').value = entity.timeDescription || '';
@@ -563,7 +589,7 @@ function fillEntityForm(entity) {
 }
 
 function resetEntityForm() {
-    ['entity-id', 'entity-name', 'entity-aliases', 'entity-description', 'entity-time-description', 'entity-start-time', 'entity-end-time'].forEach((id) => {
+    ['entity-id', 'entity-parent-id', 'entity-name', 'entity-aliases', 'entity-description', 'entity-time-description', 'entity-start-time', 'entity-end-time'].forEach((id) => {
         const el = qs(`#${id}`);
         if (el) el.value = '';
     });
@@ -1872,8 +1898,12 @@ function handleEntitySubmit(e) {
     const name = qs('#entity-name')?.value.trim();
     if (!name) return alert('实体名称不能为空');
 
+    const parentIdRaw = qs('#entity-parent-id')?.value;
+    const parentId = parentIdRaw ? Number(parentIdRaw) : null;
+
     const payload = {
         name,
+        parentId,
         aliases: (qs('#entity-aliases')?.value || '').split(/\n+/).map((x) => x.trim()).filter(Boolean),
         description: qs('#entity-description')?.value || '',
         timeDescription: qs('#entity-time-description')?.value || '',
@@ -1894,7 +1924,7 @@ function handleEntitySubmit(e) {
         }
     } else {
         const newId = Math.max(0, ...entityState.data.map((x) => x.id)) + 1;
-        entityState.data.unshift({ id: newId, parentId: null, ...payload });
+        entityState.data.unshift({ id: newId, ...payload });
         appendOperationLog('entities', '新建', newId, payload.name, '创建实体');
     }
 
