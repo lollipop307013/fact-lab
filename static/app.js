@@ -170,6 +170,125 @@ function closeOperationLogModal() {
     closeModal('operation-log-modal');
 }
 
+function viewEntityHistory(entityId) {
+    const entity = entityState.data.find(e => e.id === entityId);
+    if (!entity) return;
+
+    const title = qs('#item-history-title');
+    const tbody = qs('#item-history-tbody');
+    if (title) title.textContent = `实体操作记录 - ${entity.name}`;
+    if (!tbody) return;
+
+    // Generate mock operation history for this entity
+    const history = generateMockHistory('entity', entityId, entity.name);
+
+    if (!history.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="loading">暂无操作记录</td></tr>';
+    } else {
+        tbody.innerHTML = history.map((item) => `
+            <tr>
+                <td>${item.time}</td>
+                <td>${item.operator}</td>
+                <td>${item.action}</td>
+                <td>${item.detail || '-'}</td>
+            </tr>
+        `).join('');
+    }
+
+    openModal('item-history-modal');
+}
+
+function viewEventHistory(eventId) {
+    const event = eventState.data.find(e => e.id === eventId);
+    if (!event) return;
+
+    const title = qs('#item-history-title');
+    const tbody = qs('#item-history-tbody');
+    if (title) title.textContent = `事件操作记录 - ${event.name}`;
+    if (!tbody) return;
+
+    const history = generateMockHistory('event', eventId, event.name);
+
+    if (!history.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="loading">暂无操作记录</td></tr>';
+    } else {
+        tbody.innerHTML = history.map((item) => `
+            <tr>
+                <td>${item.time}</td>
+                <td>${item.operator}</td>
+                <td>${item.action}</td>
+                <td>${item.detail || '-'}</td>
+            </tr>
+        `).join('');
+    }
+
+    openModal('item-history-modal');
+}
+
+function viewFactHistory(factId) {
+    const fact = factState.data.find(f => f.id === factId);
+    if (!fact) return;
+
+    const title = qs('#item-history-title');
+    const tbody = qs('#item-history-tbody');
+    if (title) title.textContent = `事实操作记录 - ${fact.title}`;
+    if (!tbody) return;
+
+    const history = generateMockHistory('fact', factId, fact.title);
+
+    if (!history.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="loading">暂无操作记录</td></tr>';
+    } else {
+        tbody.innerHTML = history.map((item) => `
+            <tr>
+                <td>${item.time}</td>
+                <td>${item.operator}</td>
+                <td>${item.action}</td>
+                <td>${item.detail || '-'}</td>
+            </tr>
+        `).join('');
+    }
+
+    openModal('item-history-modal');
+}
+
+function generateMockHistory(type, id, name) {
+    const operators = ['张三', '李四', '王五', '赵六'];
+    const actions = ['创建', '审核通过', '编辑保存', '修改状态'];
+
+    // Generate some mock history records
+    const history = [];
+    const now = new Date();
+
+    // Create record
+    history.push({
+        time: formatDateTime(new Date(now.getTime() - Math.random() * 1000000000)),
+        operator: operators[Math.floor(Math.random() * operators.length)],
+        action: '创建',
+        detail: `创建了${type === 'entity' ? '实体' : type === 'event' ? '事件' : '事实'} "${name}"`
+    });
+
+    // Add some random operations
+    const numOps = Math.floor(Math.random() * 3) + 1;
+    for (let i = 0; i < numOps; i++) {
+        history.push({
+            time: formatDateTime(new Date(now.getTime() - Math.random() * 500000000)),
+            operator: operators[Math.floor(Math.random() * operators.length)],
+            action: actions[Math.floor(Math.random() * actions.length)],
+            detail: `对${type === 'entity' ? '实体' : type === 'event' ? '事件' : '事实'}进行了${actions[Math.floor(Math.random() * actions.length)]}操作`
+        });
+    }
+
+    // Sort by time descending
+    history.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+    return history;
+}
+
+function closeItemHistoryModal() {
+    closeModal('item-history-modal');
+}
+
 function getChildren(parentId) {
 
 
@@ -778,11 +897,16 @@ function renderEntityRow(e) {
             <td><span style="padding:4px 10px;border-radius:12px;background:${review.color};color:#fff;font-size:12px;">${review.text}</span></td>
             <td>${e.aliases?.length ? e.aliases.join('<br>') : '-'}</td>
             <td><div class="fact-cell-scroll-box">${e.description || '-'}</div></td>
-            <td>${e.updatedAt || '-'}</td>
-            <td>${e.updatedBy || '-'}</td>
             <td>
+                <div style="font-size:12px;line-height:1.4;">
+                    <div style="color:#666;margin-bottom:2px;">${e.updatedAt || '-'}</div>
+                    <div style="color:#666;">${e.updatedBy || '-'}</div>
+                </div>
+            </td>
+            <td>
+                <button class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="viewEntityHistory(${e.id})">查看记录</button>
                 <button class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="editEntity(${e.id})">编辑</button>
-                <button class="btn btn-danger" style="padding:6px 10px;font-size:12px;margin-left:6px;" onclick="deleteEntity(${e.id})">删除</button>
+                <button class="btn btn-danger" style="padding:6px 10px;font-size:12px;" onclick="deleteEntity(${e.id})">删除</button>
             </td>
 
         </tr>
@@ -896,11 +1020,16 @@ function renderEventRow(e) {
             <td>${e.endTime || '-'}</td>
             <td><div class="fact-cell-scroll-box fact-cell-scroll-box-sm">${e.timeDescription || '-'}</div></td>
             <td>${e.source || '-'}</td>
-            <td>${e.updatedAt || '-'}</td>
-            <td>${e.updatedBy || '-'}</td>
             <td>
+                <div style="font-size:12px;line-height:1.4;">
+                    <div style="color:#666;margin-bottom:2px;">${e.updatedAt || '-'}</div>
+                    <div style="color:#666;">${e.updatedBy || '-'}</div>
+                </div>
+            </td>
+            <td>
+                <button class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="viewEventHistory(${e.id})">查看记录</button>
                 <button class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="showEventModal(${e.id})">编辑</button>
-                <button class="btn btn-danger" style="padding:6px 10px;font-size:12px;margin-left:6px;" onclick="deleteEvent(${e.id})">删除</button>
+                <button class="btn btn-danger" style="padding:6px 10px;font-size:12px;" onclick="deleteEvent(${e.id})">删除</button>
             </td>
 
         </tr>
@@ -1326,12 +1455,15 @@ function renderFactRow(f) {
             <td><div class="fact-cell-scroll-box">${getEventNames(f.eventIds) || '-'}</div></td>
             <td><div class="fact-cell-scroll-box">${contradictionInfo}</div></td>
             <td>
-                <div>${f.updatedAt || '-'}</div>
-                <div style="margin-top:4px;color:#666;font-size:12px;">${f.updatedBy || '-'}</div>
+                <div style="font-size:12px;line-height:1.4;">
+                    <div style="color:#666;margin-bottom:2px;">${f.updatedAt || '-'}</div>
+                    <div style="color:#666;">${f.updatedBy || '-'}</div>
+                </div>
             </td>
             <td>
+                <button class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="viewFactHistory(${f.id})">查看记录</button>
                 <button class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="editFact(${f.id})">编辑</button>
-                <button class="btn btn-danger" style="padding:6px 10px;font-size:12px;margin-left:6px;" onclick="deleteFact(${f.id})">删除</button>
+                <button class="btn btn-danger" style="padding:6px 10px;font-size:12px;" onclick="deleteFact(${f.id})">删除</button>
             </td>
         </tr>
     `;

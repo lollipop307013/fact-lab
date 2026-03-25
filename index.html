@@ -1881,8 +1881,7 @@
                                 <th>审核状态</th>
                                 <th>别名</th>
                                 <th>描述</th>
-                                <th>修改时间</th>
-                                <th>修改人</th>
+                                <th>修改信息</th>
                                 <th>操作</th>
                             </tr>
 
@@ -2025,8 +2024,7 @@
                                 <th>结束时间</th>
                                 <th>时间描述</th>
                                 <th>来源</th>
-                                <th>修改时间</th>
-                                <th>修改人</th>
+                                <th>修改信息</th>
                                 <th>操作</th>
 
                             </tr>
@@ -2568,7 +2566,7 @@
                                     <th>时间描述</th>
                                     <th>关联事件</th>
                                     <th>矛盾信息</th>
-                                    <th>最后修改时间</th>
+                                    <th>修改信息</th>
                                     <th>操作</th>
                                 </tr>
                             </thead>
@@ -3311,6 +3309,28 @@
     </div>
 
     <!-- 模块操作记录 -->
+    <div id="item-history-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="item-history-title">操作记录</h2>
+                <span class="close" onclick="closeItemHistoryModal()">&times;</span>
+            </div>
+            <table class="operation-log-table">
+                <thead>
+                    <tr>
+                        <th>时间</th>
+                        <th>操作人</th>
+                        <th>动作</th>
+                        <th>说明</th>
+                    </tr>
+                </thead>
+                <tbody id="item-history-tbody">
+                    <tr><td colspan="4" class="loading">加载中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <div id="operation-log-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
