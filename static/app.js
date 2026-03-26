@@ -1,4 +1,4 @@
-console.log('app.js loaded v20260311-5');
+console.log('app.js loaded v20260311-10');
 
 const qs = (sel, root = document) => root.querySelector(sel);
 const qsa = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -109,6 +109,11 @@ function nowDateTime() {
     return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
+function formatDateTime(date) {
+    const p = (n) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}/${p(date.getMonth() + 1)}/${p(date.getDate())} ${p(date.getHours())}:${p(date.getMinutes())}:${p(date.getSeconds())}`;
+}
+
 function ensureAuditFieldsForRecord(record, index) {
     if (!record.updatedAt) record.updatedAt = `2026/03/${String((index % 27) + 1).padStart(2, '0')} 10:00:00`;
     if (!record.updatedBy) record.updatedBy = CURRENT_USER;
@@ -135,41 +140,6 @@ function appendOperationLog(module, action, targetId, targetName, detail = '') {
     if (list.length > 200) list.length = 200;
 }
 
-function renderOperationLogs(module = operationLogState.activeModule) {
-    operationLogState.activeModule = module;
-    const titleMap = { entities: '实体操作记录', events: '事件操作记录', facts: '事实操作记录' };
-    const title = qs('#operation-log-title');
-    const tbody = qs('#operation-log-tbody');
-    if (title) title.textContent = titleMap[module] || '操作记录';
-    if (!tbody) return;
-
-    const list = operationLogState[module] || [];
-    if (!list.length) {
-        tbody.innerHTML = '<tr><td colspan="6" class="loading">暂无操作记录</td></tr>';
-        return;
-    }
-
-    tbody.innerHTML = list.map((item) => `
-        <tr>
-            <td>${item.time}</td>
-            <td>${item.operator}</td>
-            <td>${item.action}</td>
-            <td>${item.targetId ?? '-'}</td>
-            <td>${item.targetName || '-'}</td>
-            <td>${item.detail || '-'}</td>
-        </tr>
-    `).join('');
-}
-
-function showOperationLogs(module) {
-    renderOperationLogs(module);
-    openModal('operation-log-modal');
-}
-
-function closeOperationLogModal() {
-    closeModal('operation-log-modal');
-}
-
 function viewEntityHistory(entityId) {
     const entity = entityState.data.find(e => e.id === entityId);
     if (!entity) return;
@@ -183,14 +153,13 @@ function viewEntityHistory(entityId) {
     const history = generateMockHistory('entity', entityId, entity.name);
 
     if (!history.length) {
-        tbody.innerHTML = '<tr><td colspan="4" class="loading">暂无操作记录</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" class="loading">暂无操作记录</td></tr>';
     } else {
         tbody.innerHTML = history.map((item) => `
             <tr>
                 <td>${item.time}</td>
                 <td>${item.operator}</td>
                 <td>${item.action}</td>
-                <td>${item.detail || '-'}</td>
             </tr>
         `).join('');
     }
@@ -210,14 +179,13 @@ function viewEventHistory(eventId) {
     const history = generateMockHistory('event', eventId, event.name);
 
     if (!history.length) {
-        tbody.innerHTML = '<tr><td colspan="4" class="loading">暂无操作记录</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" class="loading">暂无操作记录</td></tr>';
     } else {
         tbody.innerHTML = history.map((item) => `
             <tr>
                 <td>${item.time}</td>
                 <td>${item.operator}</td>
                 <td>${item.action}</td>
-                <td>${item.detail || '-'}</td>
             </tr>
         `).join('');
     }
@@ -237,14 +205,13 @@ function viewFactHistory(factId) {
     const history = generateMockHistory('fact', factId, fact.title);
 
     if (!history.length) {
-        tbody.innerHTML = '<tr><td colspan="4" class="loading">暂无操作记录</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" class="loading">暂无操作记录</td></tr>';
     } else {
         tbody.innerHTML = history.map((item) => `
             <tr>
                 <td>${item.time}</td>
                 <td>${item.operator}</td>
                 <td>${item.action}</td>
-                <td>${item.detail || '-'}</td>
             </tr>
         `).join('');
     }
@@ -264,8 +231,7 @@ function generateMockHistory(type, id, name) {
     history.push({
         time: formatDateTime(new Date(now.getTime() - Math.random() * 1000000000)),
         operator: operators[Math.floor(Math.random() * operators.length)],
-        action: '创建',
-        detail: `创建了${type === 'entity' ? '实体' : type === 'event' ? '事件' : '事实'} "${name}"`
+        action: '创建'
     });
 
     // Add some random operations
@@ -274,8 +240,7 @@ function generateMockHistory(type, id, name) {
         history.push({
             time: formatDateTime(new Date(now.getTime() - Math.random() * 500000000)),
             operator: operators[Math.floor(Math.random() * operators.length)],
-            action: actions[Math.floor(Math.random() * actions.length)],
-            detail: `对${type === 'entity' ? '实体' : type === 'event' ? '事件' : '事实'}进行了${actions[Math.floor(Math.random() * actions.length)]}操作`
+            action: actions[Math.floor(Math.random() * actions.length)]
         });
     }
 
