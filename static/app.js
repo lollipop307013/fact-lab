@@ -1,4 +1,4 @@
-console.log('app.js loaded v20260311-10');
+console.log('app.js loaded v20260311-22');
 
 const qs = (sel, root = document) => root.querySelector(sel);
 const qsa = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -2650,6 +2650,324 @@ window.addEventListener('DOMContentLoaded', () => {
     searchFacts();
     renderEntityTree();
 });
+
+// 错误表述检测模块
+const errorDetectionState = {
+    step: 0,
+    errorText: '',
+    correctText: '',
+    originalContent: '',
+    recallMode: {
+        fuzzy: false,
+        keyword: false,
+        rag: false
+    },
+    models: {
+        extract: '',
+        filter: '',
+        correct: ''
+    },
+    retrievedFacts: [],
+    checkedFacts: [],
+    correctedFacts: [],
+    selectedFactIds: new Set()
+};
+
+// 检索与替换模块
+window.startErrorDetection = async function() {
+    const errorText = qs('#error-text')?.value?.trim();
+    const correctText = qs('#correct-text')?.value?.trim();
+
+    if (!errorText) {
+        alert('请输入要查找的词/错误表述！');
+        return;
+    }
+
+    errorDetectionState.errorText = errorText;
+    errorDetectionState.correctText = correctText;
+    errorDetectionState.selectedFactIds.clear();
+
+    showLoading('error-detection-loading');
+    
+    // 模拟一步执行延迟
+    await simulateDelay(1500);
+
+    // 使用用户的输入进行检索并生成替换预览
+    errorDetectionState.retrievedFacts = mockRetrieveFactsWithPresets(errorText, correctText);
+    
+    renderErrorDetectionStats();
+    renderErrorDetectionFacts(errorDetectionState.retrievedFacts);
+    
+    hideLoading('error-detection-loading');
+    qs('#error-detection-results').style.display = 'block';
+};
+
+function mockRetrieveFactsWithPresets(errorText, correctText) {
+    const allFacts = factState.data;
+    const results = [];
+    
+    allFacts.forEach(fact => {
+        let replacedText = fact.factText;
+        let matchedKeywords = [];
+        let hasMatch = false;
+
+        // 如果事实内容包含查找的词
+        if (errorText && fact.factText && fact.factText.includes(errorText)) {
+            replacedText = fact.factText.replaceAll(errorText, correctText || '');
+            matchedKeywords = [errorText];
+            hasMatch = true;
+        }
+
+        if (hasMatch) {
+            results.push({
+                ...fact,
+                replacedText: replacedText,
+                matchedKeywords: matchedKeywords,
+                confidence: 0.85 + Math.random() * 0.1,
+                hasMatch: true
+            });
+        }
+    });
+    
+    // 按ID排序
+    results.sort((a, b) => a.id - b.id);
+    
+    return results;
+}
+
+function renderErrorDetectionStats() {
+    const statsContainer = qs('#error-detection-stats');
+    if (!statsContainer) return;
+    
+    const facts = errorDetectionState.retrievedFacts || [];
+    const matched = facts.filter(f => f.hasMatch).length;
+    const selected = errorDetectionState.selectedFactIds.size;
+    
+    statsContainer.innerHTML = `
+        <div style="padding: 15px; background: #fff3e0; border-radius: 6px;">
+            <div style="font-size: 24px; font-weight: bold; color: #ef6c00;">${matched}</div>
+            <div style="color: #666; font-size: 13px;">匹配到的事实总数</div>
+        </div>
+        <div style="padding: 15px; background: #e3f2fd; border-radius: 6px;">
+            <div style="font-size: 24px; font-weight: bold; color: #1565c0;">${selected}</div>
+            <div style="color: #666; font-size: 13px;">当前已选中的事实</div>
+        </div>
+    `;
+}
+
+function renderErrorDetectionFacts(facts) {
+    const container = qs('#error-detection-facts');
+    if (!container) return;
+    
+    if (!facts.length) {
+        container.innerHTML = '<div style="color: #999; padding: 20px; text-align: center;">未匹配到任何相关事实</div>';
+        
+        // 隐藏批量操作按钮
+        const batchBtn = qs('#btn-batch-correct');
+        if (batchBtn) batchBtn.style.display = 'none';
+        const selectAllCheckbox = qs('#error-detection-select-all');
+        if (selectAllCheckbox) selectAllCheckbox.checked = false;
+        
+        return;
+    }
+    
+    const errorText = errorDetectionState.errorText || '';
+    const correctText = errorDetectionState.correctText || '';
+    
+    container.innerHTML = facts.map(fact => {
+        const isSelected = errorDetectionState.selectedFactIds.has(fact.id);
+        const highlightedOriginal = highlightKeywords(fact.factText || '', fact.matchedKeywords, false);
+        const highlightedReplaced = fact.hasMatch ? highlightKeywords(fact.replacedText || '', [correctText], true) : fact.factText;
+        
+        return `
+        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 15px; border-left: 4px solid #3CA0FF;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                    <input type="checkbox" 
+                        ${isSelected ? 'checked' : ''} 
+                        onchange="toggleFactSelect(${fact.id})"
+                        style="width: 18px; height: 18px; cursor: pointer;">
+                    <div style="flex: 1;">
+                        <div style="font-weight: bold; font-size: 16px; color: #333; margin-bottom: 8px;">
+                            ${fact.title || '无标题'}
+                            <span style="font-size: 13px; padding: 4px 8px; border-radius: 4px; background: #e3f2fd; color: #1565c0; margin-left: 10px;">
+                                匹配到关键词：${fact.matchedKeywords.join('、')}
+                            </span>
+                        </div>
+                        <div style="color: #666; font-size: 13px;">ID: ${fact.id}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 15px; margin-bottom: 12px;">
+                <div style="flex: 1; background: #f5f5f5; padding: 15px; border-radius: 6px;">
+                    <div style="font-size: 13px; color: #999; margin-bottom: 5px;">检索内容（替换前）</div>
+                    <div style="color: #333; line-height: 1.6; font-size: 14px;">${highlightedOriginal}</div>
+                </div>
+                
+                <div style="flex: 1; background: #e8f5e9; padding: 15px; border-radius: 6px;">
+                    <div style="font-size: 13px; color: #2e7d32; margin-bottom: 5px;">替换后</div>
+                    <div style="color: #333; line-height: 1.6; font-size: 14px;">${highlightedReplaced}</div>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
+                <div style="font-size: 12px; color: #999;">
+                    <span>关联实体：${getEntityNames(fact.entityIds) || '-'}</span> |
+                    <span>关联事件：${getEventNames(fact.eventIds) || '-'}</span>
+                </div>
+                <button class="btn btn-solid-blue" style="padding: 6px 16px; font-size: 13px;" onclick="applySingleCorrection(${fact.id})">确认替换此条</button>
+            </div>
+        </div>
+        `;
+    }).join('');
+    
+    updateErrorDetectionSelectionUI();
+}
+
+window.toggleFactSelect = function(factId) {
+    if (errorDetectionState.selectedFactIds.has(factId)) {
+        errorDetectionState.selectedFactIds.delete(factId);
+    } else {
+        errorDetectionState.selectedFactIds.add(factId);
+    }
+    renderErrorDetectionStats();
+    updateErrorDetectionSelectionUI();
+};
+
+window.toggleErrorDetectionSelectAll = function() {
+    const selectAllCheckbox = qs('#error-detection-select-all');
+    const isChecked = selectAllCheckbox.checked;
+    
+    if (isChecked) {
+        errorDetectionState.retrievedFacts.forEach(fact => {
+            errorDetectionState.selectedFactIds.add(fact.id);
+        });
+    } else {
+        errorDetectionState.selectedFactIds.clear();
+    }
+    
+    renderErrorDetectionStats();
+    renderErrorDetectionFacts(errorDetectionState.retrievedFacts);
+};
+
+window.updateErrorDetectionSelectionUI = function() {
+    const selectAllCheckbox = qs('#error-detection-select-all');
+    const batchBtn = qs('#btn-batch-correct');
+    
+    const totalCount = errorDetectionState.retrievedFacts.length;
+    const selectedCount = errorDetectionState.selectedFactIds.size;
+    
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = totalCount > 0 && selectedCount === totalCount;
+    }
+    
+    if (batchBtn) {
+        batchBtn.style.display = selectedCount > 0 ? 'inline-block' : 'none';
+        batchBtn.textContent = `批量确认替换 (${selectedCount}条)`;
+    }
+};
+
+window.batchApplyCorrections = function() {
+    if (errorDetectionState.selectedFactIds.size === 0) return;
+    
+    const count = errorDetectionState.selectedFactIds.size;
+    const confirmed = confirm(`确认批量替换选中的 ${count} 条事实吗？`);
+    if (!confirmed) return;
+    
+    let successCount = 0;
+    errorDetectionState.selectedFactIds.forEach(factId => {
+        const fact = errorDetectionState.retrievedFacts.find(f => f.id === factId);
+        const targetFact = factState.data.find(f => f.id === factId);
+        
+        if (fact && targetFact && fact.replacedText) {
+            targetFact.factText = fact.replacedText;
+            targetFact.updatedAt = nowDateTime();
+            targetFact.updatedBy = CURRENT_USER;
+            appendOperationLog('facts', '批量替换', factId, fact.title, '批量应用检索替换');
+            successCount++;
+        }
+    });
+    
+    // 移除已处理项并清空选择
+    errorDetectionState.retrievedFacts = errorDetectionState.retrievedFacts.filter(f => !errorDetectionState.selectedFactIds.has(f.id));
+    errorDetectionState.selectedFactIds.clear();
+    
+    alert(`成功替换 ${successCount} 条事实！`);
+    renderFactStats();
+    searchFacts();
+    
+    renderErrorDetectionStats();
+    renderErrorDetectionFacts(errorDetectionState.retrievedFacts);
+};
+
+window.applySingleCorrection = function(factId) {
+    const fact = errorDetectionState.retrievedFacts.find(f => f.id === factId);
+    if (!fact || !fact.replacedText) return;
+    
+    const confirmed = confirm(`确定将事实 "${fact.title}" 的内容替换为新内容吗？`);
+    if (!confirmed) return;
+    
+    const targetFact = factState.data.find(f => f.id === factId);
+    if (targetFact) {
+        targetFact.factText = fact.replacedText;
+        targetFact.updatedAt = nowDateTime();
+        targetFact.updatedBy = CURRENT_USER;
+        
+        appendOperationLog('facts', '确认替换', factId, fact.title, '应用检索替换');
+        
+        errorDetectionState.retrievedFacts = errorDetectionState.retrievedFacts.filter(f => f.id !== factId);
+        errorDetectionState.selectedFactIds.delete(factId);
+        
+        alert('替换已应用！');
+        renderFactStats();
+        searchFacts();
+        
+        renderErrorDetectionStats();
+        renderErrorDetectionFacts(errorDetectionState.retrievedFacts);
+    }
+};
+
+function highlightKeywords(text, keywords, isReplacement = false) {
+    if (!text || !keywords || !keywords.length) return text;
+    let highlightedText = text;
+    
+    keywords.forEach(keyword => {
+        if (!keyword) return;
+        const regex = new RegExp(`(${escapeRegex(keyword)})`, 'gi');
+        if (isReplacement) {
+            // 替换后的新内容高亮（绿色）
+            highlightedText = highlightedText.replace(regex, '<span style="background: #c8e6c9; padding: 2px 4px; border-radius: 3px; font-weight: 500; color: #1b5e20;">$1</span>');
+        } else {
+            // 原内容匹配的关键词高亮（黄色）
+            highlightedText = highlightedText.replace(regex, '<span style="background: #fff3cd; padding: 2px 4px; border-radius: 3px; font-weight: 500; color: #f57f17;">$1</span>');
+        }
+    });
+    
+    return highlightedText;
+}
+
+function showLoading(loadingId) {
+    const loading = qs(`#${loadingId}`);
+    if (loading) loading.style.display = 'block';
+}
+
+function hideLoading(loadingId) {
+    const loading = qs(`#${loadingId}`);
+    if (loading) loading.style.display = 'none';
+}
+
+function simulateDelay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+
+
+
 
 
 
